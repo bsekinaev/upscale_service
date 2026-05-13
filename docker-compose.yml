@@ -1,0 +1,26 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  flask:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+    depends_on:
+      - redis
+    volumes:
+      - ./EDSR_x2.pb:/app/EDSR_x2.pb
+
+  celery:
+    build: .
+    command: celery -A celery_worker worker --loglevel=info
+    depends_on:
+      - redis
+    volumes:
+      - ./EDSR_x2.pb:/app/EDSR_x2.pb
+    environment:
+      - C_FORCE_ROOT=1

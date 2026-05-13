@@ -1,0 +1,6 @@
+flask
+celery
+redis
+opencv-contrib-python-headless
+numpy
+pytest
