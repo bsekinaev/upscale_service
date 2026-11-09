@@ -50,6 +50,12 @@ def upload_too_large(_exc):
     return jsonify({"error": "file_too_large"}), 413
 
 
+@app.route("/healthz", methods=["GET"])
+def healthcheck():
+    # Liveness only; does not claim Redis or model availability.
+    return jsonify({"status": "ok"}), 200
+
+
 @app.route("/upscale", methods=["POST"])
 def upscale():
     if "file" not in request.files:
