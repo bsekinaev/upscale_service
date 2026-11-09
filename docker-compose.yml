@@ -27,7 +27,7 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    networks: [backend]
+    networks: [backend, frontend]
     read_only: true
     tmpfs:
       - /tmp:rw,nosuid,noexec,size=32m
@@ -59,3 +59,5 @@ services:
 networks:
   backend:
     internal: true
+  frontend:
+    driver: bridge
