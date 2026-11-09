@@ -1,26 +1,63 @@
 services:
   redis:
     image: redis:7-alpine
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - noeviction
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [backend]
     restart: unless-stopped
+    security_opt: [no-new-privileges:true]
 
   flask:
     build: .
     ports:
-      - "5000:5000"
-    environment:
-      - FLASK_APP=app.py
-      - FLASK_ENV=development
+      - "127.0.0.1:5000:5000"
     depends_on:
-      - redis
-    volumes:
-      - ./EDSR_x2.pb:/app/EDSR_x2.pb
+      redis:
+        condition: service_healthy
+    networks: [backend, frontend]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,noexec,size=32m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 512m
 
   celery:
     build: .
-    command: celery -A celery_worker worker --loglevel=info
+    command:
+      - celery
+      - -A
+      - celery_worker
+      - worker
+      - --loglevel=info
+      - --concurrency=1
+      - --prefetch-multiplier=1
     depends_on:
-      - redis
-    volumes:
-      - ./EDSR_x2.pb:/app/EDSR_x2.pb
-    environment:
-      - C_FORCE_ROOT=1
+      redis:
+        condition: service_healthy
+    networks: [backend]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,noexec,size=32m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 1024m
+
+networks:
+  backend:
+    internal: true
+  frontend:
+    driver: bridge
